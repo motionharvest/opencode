@@ -1801,16 +1801,14 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
   })
 })
 
-describe("agents.ignore", () => {
+describe("ignore_agents", () => {
   test("filters agents based on glob patterns", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
-        // Create opencode.json with agents.ignore
+        // Create opencode.json with ignore_agents
         await writeConfig(dir, {
           $schema: "https://opencode.ai/config.json",
-          agents: {
-            ignore: ["test/**", "drafts/*"],
-          },
+          ignore_agents: ["test/**", "drafts/*"],
         })
         // Create agent files
         await fs.mkdir(path.join(dir, ".opencode", "agents"), { recursive: true })
@@ -1842,14 +1840,12 @@ describe("agents.ignore", () => {
     })
   })
 
-  test("does not filter when agents.ignore is empty", async () => {
+  test("does not filter when ignore_agents is empty", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         await writeConfig(dir, {
           $schema: "https://opencode.ai/config.json",
-          agents: {
-            ignore: [],
-          },
+          ignore_agents: [],
         })
         await fs.mkdir(path.join(dir, ".opencode", "agents"), { recursive: true })
         await Bun.write(path.join(dir, ".opencode", "agents", "my-agent.md"), "---\nmode: subagent\n---\nMy agent")
@@ -1865,7 +1861,7 @@ describe("agents.ignore", () => {
     })
   })
 
-  test("does not filter when agents is undefined", async () => {
+  test("does not filter when ignore_agents is undefined", async () => {
     await using tmp = await tmpdir({
       init: async (dir) => {
         await writeConfig(dir, {

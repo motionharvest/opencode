@@ -192,11 +192,11 @@ export namespace Config {
       }
     }
 
-    // Apply agents.ignore patterns from config
-    const agentIgnorePatterns = result.agents?.ignore
+    // Apply ignore_agents patterns from config
+    const agentIgnorePatterns = result.ignore_agents
     if (agentIgnorePatterns && agentIgnorePatterns.length > 0 && result.agent) {
-      log.debug("applying agents.ignore patterns", { patterns: agentIgnorePatterns })
-      const ignoreGlobs = agentIgnorePatterns.map((pattern) => new Bun.Glob(pattern))
+      log.debug("applying ignore_agents patterns", { patterns: agentIgnorePatterns })
+      const ignoreGlobs = agentIgnorePatterns.map((pattern: string) => new Bun.Glob(pattern))
       const beforeCount = Object.keys(result.agent).length
       result.agent = Object.fromEntries(
         Object.entries(result.agent).filter(([name]) => {
@@ -210,7 +210,7 @@ export namespace Config {
         }),
       )
       const afterCount = Object.keys(result.agent).length
-      log.debug("agents.ignore filter applied", { before: beforeCount, after: afterCount })
+      log.debug("ignore_agents filter applied", { before: beforeCount, after: afterCount })
     }
 
     // Migrate deprecated mode field to agent field
@@ -1103,15 +1103,7 @@ export namespace Config {
         .catchall(Agent)
         .optional()
         .describe("Agent configuration, see https://opencode.ai/docs/agents"),
-      agents: z
-        .object({
-          ignore: z
-            .array(z.string())
-            .optional()
-            .describe("Glob patterns for files/folders to exclude from agent discovery"),
-        })
-        .optional()
-        .describe("Agent discovery configuration"),
+      ignore_agents: z.array(z.string()).optional().describe("Glob patterns for agent names to exclude from discovery"),
       provider: z
         .record(z.string(), Provider)
         .optional()

@@ -48,14 +48,16 @@ export namespace Truncate {
   }
 
   export async function output(text: string, options: Options = {}, agent?: Agent.Info): Promise<Result> {
+    // Defensive: ensure text is a string
+    const safeText = typeof text === "string" ? text : String(text)
     const maxLines = options.maxLines ?? MAX_LINES
     const maxBytes = options.maxBytes ?? MAX_BYTES
     const direction = options.direction ?? "head"
-    const lines = text.split("\n")
-    const totalBytes = Buffer.byteLength(text, "utf-8")
+    const lines = safeText.split("\n")
+    const totalBytes = Buffer.byteLength(safeText, "utf-8")
 
     if (lines.length <= maxLines && totalBytes <= maxBytes) {
-      return { content: text, truncated: false }
+      return { content: safeText, truncated: false }
     }
 
     const out: string[] = []
@@ -91,7 +93,7 @@ export namespace Truncate {
 
     const id = Identifier.ascending("tool")
     const filepath = path.join(DIR, id)
-    await Bun.write(Bun.file(filepath), text)
+    await Bun.write(Bun.file(filepath), safeText)
 
     const hint = hasTaskTool(agent)
       ? `The tool call succeeded but the output was truncated. Full output saved to: ${filepath}\nUse the Task tool to have explore agent process this file with Grep and Read (with offset/limit). Do NOT read the full file yourself - delegate to save context.`
