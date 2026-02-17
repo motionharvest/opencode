@@ -192,6 +192,27 @@ export namespace Config {
       }
     }
 
+    // Apply agents.ignore patterns from config
+    const agentIgnorePatterns = result.agents?.ignore
+    if (agentIgnorePatterns && agentIgnorePatterns.length > 0 && result.agent) {
+      log.debug("applying agents.ignore patterns", { patterns: agentIgnorePatterns })
+      const ignoreGlobs = agentIgnorePatterns.map((pattern) => new Bun.Glob(pattern))
+      const beforeCount = Object.keys(result.agent).length
+      result.agent = Object.fromEntries(
+        Object.entries(result.agent).filter(([name]) => {
+          for (const glob of ignoreGlobs) {
+            if (glob.match(name)) {
+              log.debug("ignoring agent", { agent: name })
+              return false
+            }
+          }
+          return true
+        }),
+      )
+      const afterCount = Object.keys(result.agent).length
+      log.debug("agents.ignore filter applied", { before: beforeCount, after: afterCount })
+    }
+
     // Migrate deprecated mode field to agent field
     for (const [name, mode] of Object.entries(result.mode ?? {})) {
       result.agent = mergeDeep(result.agent ?? {}, {
@@ -1082,6 +1103,15 @@ export namespace Config {
         .catchall(Agent)
         .optional()
         .describe("Agent configuration, see https://opencode.ai/docs/agents"),
+      agents: z
+        .object({
+          ignore: z
+            .array(z.string())
+            .optional()
+            .describe("Glob patterns for files/folders to exclude from agent discovery"),
+        })
+        .optional()
+        .describe("Agent discovery configuration"),
       provider: z
         .record(z.string(), Provider)
         .optional()

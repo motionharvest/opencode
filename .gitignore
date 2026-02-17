@@ -22,7 +22,7 @@ a.out
 target
 .scripts
 .direnv/
-
+buffer.json
 # Local dev files
 opencode-dev
 logs/

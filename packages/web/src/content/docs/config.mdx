@@ -338,6 +338,25 @@ You can configure specialized agents for specific tasks through the `agent` opti
 
 You can also define agents using markdown files in `~/.config/opencode/agents/` or `.opencode/agents/`. [Learn more here](/docs/agents).
 
+#### Ignoring agents
+
+You can exclude specific agents from discovery using glob patterns in the `agents.ignore` option. This is useful for filtering out draft agents, test agents, or archived agents that you don't want to appear in the agent list.
+
+```jsonc title="opencode.jsonc"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agents": {
+    "ignore": ["drafts/**", "test-*", "archive/**"],
+  },
+}
+```
+
+The patterns are matched against agent names, which are derived from their file paths. For example, an agent defined in `.opencode/agents/drafts/my-agent.md` has the name `drafts/my-agent`. Patterns follow glob syntax:
+
+- `**` matches any number of directory levels
+- `*` matches any characters except `/`
+- `?` matches a single character
+
 ---
 
 ### Default agent

@@ -1800,3 +1800,88 @@ describe("OPENCODE_DISABLE_PROJECT_CONFIG", () => {
     }
   })
 })
+
+describe("agents.ignore", () => {
+  test("filters agents based on glob patterns", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        // Create opencode.json with agents.ignore
+        await writeConfig(dir, {
+          $schema: "https://opencode.ai/config.json",
+          agents: {
+            ignore: ["test/**", "drafts/*"],
+          },
+        })
+        // Create agent files
+        await fs.mkdir(path.join(dir, ".opencode", "agents"), { recursive: true })
+        await fs.mkdir(path.join(dir, ".opencode", "agents", "test"), { recursive: true })
+        await fs.mkdir(path.join(dir, ".opencode", "agents", "drafts"), { recursive: true })
+        await Bun.write(
+          path.join(dir, ".opencode", "agents", "keep-agent.md"),
+          "---\nmode: subagent\n---\nKeep this agent",
+        )
+        await Bun.write(
+          path.join(dir, ".opencode", "agents", "test", "ignored.md"),
+          "---\nmode: subagent\n---\nThis should be ignored",
+        )
+        await Bun.write(
+          path.join(dir, ".opencode", "agents", "drafts", "draft.md"),
+          "---\nmode: subagent\n---\nThis should also be ignored",
+        )
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.agent).toBeDefined()
+        expect(config.agent!["keep-agent"]).toBeDefined()
+        expect(config.agent!["test/ignored"]).toBeUndefined()
+        expect(config.agent!["drafts/draft"]).toBeUndefined()
+      },
+    })
+  })
+
+  test("does not filter when agents.ignore is empty", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await writeConfig(dir, {
+          $schema: "https://opencode.ai/config.json",
+          agents: {
+            ignore: [],
+          },
+        })
+        await fs.mkdir(path.join(dir, ".opencode", "agents"), { recursive: true })
+        await Bun.write(path.join(dir, ".opencode", "agents", "my-agent.md"), "---\nmode: subagent\n---\nMy agent")
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.agent).toBeDefined()
+        expect(config.agent!["my-agent"]).toBeDefined()
+      },
+    })
+  })
+
+  test("does not filter when agents is undefined", async () => {
+    await using tmp = await tmpdir({
+      init: async (dir) => {
+        await writeConfig(dir, {
+          $schema: "https://opencode.ai/config.json",
+        })
+        await fs.mkdir(path.join(dir, ".opencode", "agents"), { recursive: true })
+        await Bun.write(path.join(dir, ".opencode", "agents", "my-agent.md"), "---\nmode: subagent\n---\nMy agent")
+      },
+    })
+    await Instance.provide({
+      directory: tmp.path,
+      fn: async () => {
+        const config = await Config.get()
+        expect(config.agent).toBeDefined()
+        expect(config.agent!["my-agent"]).toBeDefined()
+      },
+    })
+  })
+})
